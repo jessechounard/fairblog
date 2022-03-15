@@ -1,0 +1,24 @@
+# package directories
+node_modules
+jspm_packages
+
+# Esbuild directory
+.esbuild
+
+# Serverless directories
+.serverless
+
+# Env files
+.env*
+
+# Jest coverage files
+coverage
+
+# MacOS nonsense
+.DS_Store
+
+# Local tsc output directory
+lib
+
+# Eslint cache
+.eslintcache
