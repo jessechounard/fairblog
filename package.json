@@ -13,8 +13,8 @@
     "@middy/core": "^2.5.3",
     "@middy/http-error-handler": "^2.5.7",
     "@middy/http-json-body-parser": "^2.5.3",
-    "@middy/validator": "^2.5.7",
-    "date-fns": "^2.28.0"
+    "date-fns": "^2.28.0",
+    "zod": "^3.13.4"
   },
   "devDependencies": {
     "@serverless/typescript": "^3.0.0",
