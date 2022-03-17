@@ -7,3 +7,8 @@ export type APIGatewayProxyEventWithBody<BodyType> = Omit<
 
 export type APIGatewayProxyEventWithBodyHandler<BodyType, ResponseType> =
     Handler<APIGatewayProxyEventWithBody<BodyType>, ResponseType>;
+
+export type APIGatewayProxyEventResponse = {
+    statusCode: number;
+    body?: string;
+};

@@ -1,6 +1,0 @@
-{
-    "headers": {
-        "Content-Type": "application/json"
-    },
-    "body": "{\"userName\": \"jessechounard@gmail.com\",\"oldPassword\": \"password123\", \"newPassword\": \"hunter2\"}"
-}

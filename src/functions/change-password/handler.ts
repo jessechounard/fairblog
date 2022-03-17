@@ -1,93 +1,47 @@
 import middy from '@middy/core';
 import middyJsonBodyParser from '@middy/http-json-body-parser';
 import middyHttpErrorHandler from '@middy/http-error-handler';
-import { APIGatewayProxyEventWithBodyHandler } from 'src/common/handler-types';
 import {
-    AuthenticationDetails,
-    CognitoUser,
-    CognitoUserPool,
-    IAuthenticationDetailsData,
-    ICognitoUserData,
-    ICognitoUserPoolData,
-} from 'amazon-cognito-identity-js';
-import { StatusCodes } from 'http-status-codes';
+    APIGatewayProxyEventResponse,
+    APIGatewayProxyEventWithBodyHandler,
+} from 'src/common/handler-types';
 import {
     ChangePasswordInput,
     changePasswordInputSchema,
-    ChangePasswordOutput,
 } from 'src/models/change-password';
-import { POOL_DATA } from 'src/models/pool-data';
+import { CognitoStatus, cognitoChangePassword } from 'src/common/cognito';
+import { StatusCodes } from 'http-status-codes';
 
 const handler: APIGatewayProxyEventWithBodyHandler<
     ChangePasswordInput,
-    ChangePasswordOutput
+    APIGatewayProxyEventResponse
 > = async (event) => {
     changePasswordInputSchema.parse(event.body);
 
-    const { userName, oldPassword, newPassword } = event.body;
+    const { username, oldPassword, newPassword } = event.body;
 
-    const authenticationData: IAuthenticationDetailsData = {
-        Username: userName,
-        Password: oldPassword,
-    };
-    const authenticationDetails = new AuthenticationDetails(authenticationData);
+    const result = await cognitoChangePassword(
+        username,
+        oldPassword,
+        newPassword,
+    );
 
-    const poolData: ICognitoUserPoolData = {
-        UserPoolId: POOL_DATA.userPoolId,
-        ClientId: POOL_DATA.clientId,
-    };
-    const userPool = new CognitoUserPool(poolData);
-
-    const userData: ICognitoUserData = {
-        Username: userName,
-        Pool: userPool,
-    };
-    const cognitoUser = new CognitoUser(userData);
-
-    let changePasswordOutput: ChangePasswordOutput = {
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        message: 'Unknown Error - Default',
-    };
-
-    cognitoUser.authenticateUser(authenticationDetails, {
-        onSuccess: function (_result) {
-            console.log('1');
-            cognitoUser.changePassword(
-                oldPassword,
-                newPassword,
-                (error, _result) => {
-                    console.log(JSON.stringify(error, undefined, 2));
-                    changePasswordOutput = error
-                        ? {
-                              statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-                              message: 'Unknown Error',
-                          }
-                        : {
-                              statusCode: StatusCodes.OK,
-                              message: 'Password Changed',
-                          };
-                },
-            );
-        },
-
-        onFailure: function (_error) {
-            console.log('2');
-            changePasswordOutput = {
-                statusCode: StatusCodes.UNAUTHORIZED,
-                message: 'Authentication Failed',
-            };
-        },
-
-        newPasswordRequired: function (_userAttributes, _requiredAttributes) {
-            console.log('3');
-            changePasswordOutput = {
-                statusCode: StatusCodes.UNAUTHORIZED,
-                message: 'New Password Required - Contact Admin',
-            };
-        },
-    });
-
-    return changePasswordOutput;
+    if (result.status === CognitoStatus.Success) {
+        return {
+            statusCode: StatusCodes.OK,
+            body: result.message,
+        };
+    } else if (result.status === CognitoStatus.UnknownError) {
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            body: result.message,
+        };
+    } else {
+        return {
+            statusCode: StatusCodes.UNAUTHORIZED,
+            body: result.message,
+        };
+    }
 };
 
 export const main = middy(handler)

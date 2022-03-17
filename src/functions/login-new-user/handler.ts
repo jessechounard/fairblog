@@ -1,99 +1,47 @@
 import middy from '@middy/core';
 import middyJsonBodyParser from '@middy/http-json-body-parser';
 import middyHttpErrorHandler from '@middy/http-error-handler';
-import { APIGatewayProxyEventWithBodyHandler } from 'src/common/handler-types';
 import {
-    AuthenticationDetails,
-    CognitoUser,
-    CognitoUserPool,
-    IAuthenticationDetailsData,
-    ICognitoUserData,
-    ICognitoUserPoolData,
-} from 'amazon-cognito-identity-js';
+    APIGatewayProxyEventResponse,
+    APIGatewayProxyEventWithBodyHandler,
+} from 'src/common/handler-types';
 import {
     LoginNewUserInput,
     loginNewUserInputSchema,
-    LoginNewUserOutput,
 } from 'src/models/login-new-user';
 import { StatusCodes } from 'http-status-codes';
-import { POOL_DATA } from 'src/models/pool-data';
+import { cognitoLoginNewUser, CognitoStatus } from 'src/common/cognito';
 
 const handler: APIGatewayProxyEventWithBodyHandler<
     LoginNewUserInput,
-    LoginNewUserOutput
+    APIGatewayProxyEventResponse
 > = async (event) => {
     loginNewUserInputSchema.parse(event.body);
 
-    const { userName, temporaryPassword, newPassword } = event.body;
+    const { username, temporaryPassword, newPassword } = event.body;
 
-    const authenticationData: IAuthenticationDetailsData = {
-        Username: userName,
-        Password: temporaryPassword,
-    };
-    const authenticationDetails = new AuthenticationDetails(authenticationData);
+    const result = await cognitoLoginNewUser(
+        username,
+        temporaryPassword,
+        newPassword,
+    );
 
-    const poolData: ICognitoUserPoolData = {
-        UserPoolId: POOL_DATA.userPoolId,
-        ClientId: POOL_DATA.clientId,
-    };
-    const userPool = new CognitoUserPool(poolData);
-
-    const userData: ICognitoUserData = {
-        Username: userName,
-        Pool: userPool,
-    };
-    const cognitoUser = new CognitoUser(userData);
-
-    let loginNewUserOutput: LoginNewUserOutput = {
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        message: 'Unknown Error - Default',
-    };
-
-    cognitoUser.authenticateUser(authenticationDetails, {
-        onSuccess: function (_result) {
-            loginNewUserOutput = {
-                statusCode: StatusCodes.BAD_REQUEST,
-                message: 'User does not have a temporary password',
-            };
-        },
-
-        onFailure: function (_error) {
-            loginNewUserOutput = {
-                statusCode: StatusCodes.UNAUTHORIZED,
-                message: 'Authentication Failed',
-            };
-        },
-
-        newPasswordRequired: function (_userAttributes, requiredAttributes) {
-            console.log('change');
-
-            cognitoUser.completeNewPasswordChallenge(
-                newPassword,
-                requiredAttributes,
-                {
-                    onSuccess: function (result) {
-                        console.log('success');
-
-                        loginNewUserOutput = {
-                            statusCode: StatusCodes.OK,
-                            token: result.getAccessToken().getJwtToken(),
-                        };
-                    },
-
-                    onFailure: function (_error) {
-                        console.log(JSON.stringify(_error, undefined, 2));
-
-                        loginNewUserOutput = {
-                            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-                            message: 'Unknown Error',
-                        };
-                    },
-                },
-            );
-        },
-    });
-
-    return loginNewUserOutput;
+    if (result.status === CognitoStatus.Success) {
+        return {
+            statusCode: StatusCodes.OK,
+            body: result.message,
+        };
+    } else if (result.status === CognitoStatus.UnknownError) {
+        return {
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            body: result.message,
+        };
+    } else {
+        return {
+            statusCode: StatusCodes.UNAUTHORIZED,
+            body: result.message,
+        };
+    }
 };
 
 export const main = middy(handler)

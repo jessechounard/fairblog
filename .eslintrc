@@ -29,7 +29,9 @@
     ],
     "rules": {
         "prefer-arrow-callback": "warn",
-        "unicorn/prefer-module": "off"
+        "sonarjs/no-identical-functions": "off",
+        "unicorn/prefer-module": "off",
+        "unicorn/no-null": "off"
     },
     "settings": {
         "import/parsers": { "@typescript-eslint/parser": [".ts", ".tsx"] },

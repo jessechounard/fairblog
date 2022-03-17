@@ -1,6 +1,5 @@
 import type { AWS } from '@serverless/typescript';
 
-import hello from '@functions/hello';
 import changePassword from '@functions/change-password';
 import login from '@functions/login';
 import loginNewUser from '@functions/login-new-user';
@@ -21,8 +20,8 @@ const serverlessConfiguration: AWS = {
             NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
         },
     },
-    // import the function via paths
-    functions: { hello, changePassword, login, loginNewUser },
+
+    functions: { changePassword, login, loginNewUser },
     package: { individually: true },
     custom: {
         esbuild: {
