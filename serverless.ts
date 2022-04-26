@@ -10,6 +10,8 @@ const serverlessConfiguration: AWS = {
     plugins: ['serverless-esbuild'],
     provider: {
         name: 'aws',
+        region: 'us-east-1', // default: 'us-east-1', override with CLI: sls deploy --region
+        stage: 'dev', // default: 'dev', override with CLI: sls deploy --stage
         runtime: 'nodejs14.x',
         apiGateway: {
             minimumCompressionSize: 1024,
@@ -34,6 +36,8 @@ const serverlessConfiguration: AWS = {
             platform: 'node',
             concurrency: 10,
         },
+        region: '${opt:region, self:provider.region}',
+        stage: '${opt:stage, self:provider.stage}',
     },
     resources: {
         Resources: {
@@ -50,7 +54,8 @@ const serverlessConfiguration: AWS = {
                                 'Your username is {username} and temporary password is {####}.',
                         },
                     },
-                    UserPoolName: 'fairblog-user-pool',
+                    UserPoolName:
+                        '${self:service}-user-pool-${self:custom.stage}',
                     UsernameAttributes: ['email'],
                     AutoVerifiedAttributes: ['email'],
                     Policies: {
@@ -68,7 +73,8 @@ const serverlessConfiguration: AWS = {
             CognitoUserPoolClient: {
                 Type: 'AWS::Cognito::UserPoolClient',
                 Properties: {
-                    ClientName: 'fairblog-user-pool-client',
+                    ClientName:
+                        '${self:service}-user-pool-client-${self:custom.stage}',
                     UserPoolId: {
                         Ref: 'CognitoUserPool',
                     },
