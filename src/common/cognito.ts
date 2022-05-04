@@ -7,8 +7,8 @@ import {
     ICognitoUserPoolData,
 } from 'amazon-cognito-identity-js';
 
-const COGNITO_USER_POOL_ID = 'us-east-1_IzpTn4CAo';
-const COGNITO_CLIENT_ID = '7vqqkbi0mgihvgn4cq60od92hn';
+const COGNITO_USER_POOL_ID = process.env.CognitoUserPoolId || '';
+const COGNITO_CLIENT_ID = process.env.CognitoClientId || '';
 
 export enum CognitoStatus {
     Success,

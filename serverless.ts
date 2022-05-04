@@ -20,6 +20,10 @@ const serverlessConfiguration: AWS = {
         environment: {
             AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
             NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
+            CognitoUserPoolId:
+                '${self:custom.cognito.${self:custom.stage}.userPoolId}',
+            CognitoClientId:
+                '${self:custom.cognito.${self:custom.stage}.clientId}',
         },
     },
 
@@ -38,6 +42,16 @@ const serverlessConfiguration: AWS = {
         },
         region: '${opt:region, self:provider.region}',
         stage: '${opt:stage, self:provider.stage}',
+        cognito: {
+            dev: {
+                userPoolId: 'us-east-1_ah4miDhby',
+                clientId: '340ainsg4mc5dr2tg84tt67gl',
+            },
+            prod: {
+                userPoolId: 'us-east-1_SI08T1PY8',
+                clientId: '658a2qp9rg8r7hr368dgmb1on4',
+            },
+        },
     },
     resources: {
         Resources: {
